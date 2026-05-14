@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digit Span Task</title>
+    <!-- 직관적이고 가독성 높은 폰트 -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            /* 깔끔한 UI 색상 세트 */
+            --bg-color: #f8fafc;
+            --panel-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --accent-color: #0ea5e9;
+            --color-green: #22c55e;
+            --color-red: #ef4444;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', 'Noto Sans KR', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            /* 배경 패턴 */
+            background-image: 
+                linear-gradient(rgba(226, 232, 240, 0.5) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(226, 232, 240, 0.5) 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
+
+        .screen {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            max-width: 800px;
+            padding: 2rem;
+            animation: fadeIn 0.3s ease-out;
+            position: relative;
+        }
+
+        .screen.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .panel {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 3rem;
+            width: 100%;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.025em;
+        }
+
+        p.subtitle {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            margin-bottom: 2.5rem;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            max-width: 300px;
+            padding: 1rem 1.5rem;
+            font-size: 1.1rem;
+            background: #f1f5f9;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-main);
+            outline: none;
+            transition: all 0.2s ease;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--accent-color);
+            background: #ffffff;
+            box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.2);
+        }
+
+        .btn {
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn:hover {
+            background: #0284c7;
+        }
+        
+        .btn-outline {
+            background: transparent;
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+        }
+        .btn-outline:hover {
+            background: #f1f5f9;
+        }
+
+        .progress-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 6px;
+            background: var(--border-color);
+            z-index: 10;
+        }
+        .progress-fill {
+            height: 100%;
+            background: var(--accent-color);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        .trial-info {
+            position: absolute;
+            top: 1.5rem;
+            right: 2rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            background: white;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        /* --------------------------------------
+           숫자 제시 영역 및 키패드 UI
+           -------------------------------------- */
+        .number-display {
+            font-size: 6rem; /* 일자로 나올 때 화면에 다 들어가도록 크기 약간 축소 */
+            font-weight: 800;
+            color: var(--accent-color);
+            height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem; /* 숫자 사이 간격 */
+            margin-bottom: 2rem;
+            text-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        .digit-slot {
+            width: 80px;
+            text-align: center;
+            visibility: hidden; /* 공간은 차지하되 보이지 않게 */
+        }
+
+        .digit-slot.visible {
+            visibility: visible;
+        }
+
+        /* 스마트폰 다이얼 같은 3x3 키패드 */
+        .numpad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            max-width: 320px;
+            margin: 0 auto 2rem;
+        }
+        
+        .number-btn {
+            aspect-ratio: 1;
+            font-size: 2.2rem;
+            font-weight: 700;
+            border: 2px solid var(--border-color);
+            border-radius: 16px;
+            background: white;
+            color: var(--text-main);
+            cursor: pointer;
+            transition: all 0.15s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+        }
+        
+        .number-btn:hover {
+            border-color: var(--accent-color);
+            color: var(--accent-color);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(14, 165, 233, 0.2);
+        }
+        
+        .number-btn:active {
+            transform: translateY(0);
+        }
+
+        /* 하단 진행 상태 점 */
+        .progress-dots {
+            display: flex;
+            gap: 0.8rem;
+            justify-content: center;
+            min-height: 20px;
+        }
+        .dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #e2e8f0;
+            transition: all 0.3s;
+        }
+        .dot.filled {
+            background: var(--accent-color);
+            transform: scale(1.2);
+            box-shadow: 0 0 10px rgba(14, 165, 233, 0.4);
+        }
+
+        .feedback-text {
+            font-size: 4rem;
+            font-weight: 800;
+            opacity: 0;
+            transition: opacity 0.2s;
+            letter-spacing: -0.05em;
+        }
+        .feedback-text.correct { color: var(--color-green); }
+        .feedback-text.incorrect { color: var(--color-red); }
+
+        .results-summary {
+            display: flex;
+            justify-content: space-around;
+            background: #f8fafc;
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            border: 1px solid var(--border-color);
+        }
+        .summary-item strong {
+            display: block;
+            font-size: 2rem;
+            color: var(--accent-color);
+        }
+        .summary-item span {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .chart-container {
+            width: 100%;
+            height: 300px;
+            margin: 2rem auto;
+            position: relative;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="progress-container">
+        <div class="progress-fill" id="main-progress"></div>
+    </div>
+
+    <div id="trial-info-badge" class="trial-info" style="display: none;">Trial 1 / 12</div>
+
+    <!-- 1. 시작 화면 -->
+    <div id="screen-start" class="screen active">
+        <div class="panel">
+            <h1>Digit Span Task</h1>
+            <p class="subtitle">화면에 나타나는 숫자의 순서를 기억하고<br>마우스 클릭이나 <strong>키보드 숫자키</strong>를 눌러 재현하세요.</p>
+            <input type="text" id="participant-name" placeholder="참가자 이름 (예: 김윤서)" autocomplete="off">
+            <button class="btn" style="width: 100%; max-width: 300px;" onclick="startTask()">실험 시작</button>
+        </div>
+    </div>
+
+    <!-- 2. 자극 제시 화면 -->
+    <div id="screen-display" class="screen">
+        <div class="number-display" id="target-number"></div>
+        <h2 id="display-instruction" style="font-size: 1.5rem; font-weight: 500; color: var(--text-muted);">화면 중앙에 집중하세요</h2>
+    </div>
+
+    <!-- 3. 사용자 입력 화면 -->
+    <div id="screen-input" class="screen">
+        <h2 style="font-size: 1.8rem; margin-bottom: 2rem; color: var(--text-main);">기억한 순서대로 입력하세요</h2>
+        
+        <div class="numpad">
+            <button class="number-btn" onclick="selectDigit(1)">1</button>
+            <button class="number-btn" onclick="selectDigit(2)">2</button>
+            <button class="number-btn" onclick="selectDigit(3)">3</button>
+            <button class="number-btn" onclick="selectDigit(4)">4</button>
+            <button class="number-btn" onclick="selectDigit(5)">5</button>
+            <button class="number-btn" onclick="selectDigit(6)">6</button>
+            <button class="number-btn" onclick="selectDigit(7)">7</button>
+            <button class="number-btn" onclick="selectDigit(8)">8</button>
+            <button class="number-btn" onclick="selectDigit(9)">9</button>
+        </div>
+
+        <div style="text-align: center; margin-bottom: 1.5rem;">
+            <button class="btn btn-outline" style="padding: 0.5rem 1.5rem;" onclick="undoDigit()">⌫ 지우기</button>
+        </div>
+
+        <div class="progress-dots" id="progress-dots">
+            <!-- 시퀀스 길이에 맞춰 동적 생성 -->
+        </div>
+    </div>
+
+    <!-- 4. 피드백 화면 -->
+    <div id="screen-feedback" class="screen">
+        <div class="feedback-text" id="feedback-message">정답!</div>
+    </div>
+
+    <!-- 5. 최종 결과 화면 -->
+    <div id="screen-result" class="screen">
+        <div class="panel" style="max-width: 800px; padding: 2rem;">
+            <h1>실험 완료</h1>
+            <p class="subtitle" id="result-greeting"></p>
+            
+            <div class="results-summary">
+                <div class="summary-item">
+                    <strong id="score-total">0</strong>
+                    <span>전체 정답 (Exact)</span>
+                </div>
+                <div class="summary-item">
+                    <strong id="score-pos">0%</strong>
+                    <span>평균 위치 정답률</span>
+                </div>
+                <div class="summary-item">
+                    <strong id="score-rt">0ms</strong>
+                    <span>평균 반응 시간</span>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <canvas id="accuracyChart"></canvas>
+            </div>
+            
+            <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 2rem;">
+                <button class="btn" onclick="downloadCSV()">데이터 다운로드 (CSV)</button>
+                <button class="btn btn-outline" onclick="location.reload()">다시 하기</button>
+            </div>
+            
+            <div style="margin-top: 1.5rem; text-align: center; color: var(--text-muted); font-size: 0.95rem; font-weight: 500;" id="save-status">
+                <!-- 저장 상태 표시 영역 -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 설정 값 ---
+        const DIGITS = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+        const TIME_DIGIT_ON = 700;
+        const TIME_DIGIT_OFF = 300;
+        const TIME_MAINTENANCE = 1000;
+        const TOTAL_TRIALS = 12; // 3~6 길이 * 각 3번
+
+        // 구글 앱스 스크립트(Web App) 배포 URL
+        // 지시하신 시트와 연결된 웹앱 URL을 아래에 넣으세요!
+        const GOOGLE_APP_SCRIPT_URL = '여기에_웹앱_URL을_붙여넣으세요';
+
+        // --- 상태 변수 ---
+        let participantName = '';
+        let currentTrial = 0;
+        let trialLengths = []; 
+        let currentSequenceLength = 0;
+        let currentSequence = [];
+        let userSequence = [];
+        let trialResults = [];
+        let inputStartTime = 0;
+        let evaluateTimer = null;
+
+        function initTrials() {
+            trialLengths = [3, 3, 3, 4, 4, 4, 5, 5, 5, 6, 6, 6];
+            for (let i = trialLengths.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [trialLengths[i], trialLengths[j]] = [trialLengths[j], trialLengths[i]];
+            }
+        }
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        function startTask() {
+            const nameInput = document.getElementById('participant-name').value.trim();
+            if (!nameInput) {
+                alert('참가자 이름을 입력해주세요.');
+                return;
+            }
+            participantName = nameInput;
+            currentTrial = 0;
+            trialResults = [];
+            initTrials();
+            
+            document.getElementById('trial-info-badge').style.display = 'block';
+            runNextTrial();
+        }
+
+        async function runNextTrial() {
+            if (currentTrial >= TOTAL_TRIALS) {
+                document.getElementById('trial-info-badge').style.display = 'none';
+                document.getElementById('main-progress').style.width = '100%';
+                showFinalResults();
+                return;
+            }
+
+            currentSequenceLength = trialLengths[currentTrial];
+            currentTrial++;
+            userSequence = [];
+            
+            // UI 업데이트
+            document.getElementById('trial-info-badge').textContent = `Trial ${currentTrial} / ${TOTAL_TRIALS}`;
+            document.getElementById('main-progress').style.width = `${((currentTrial - 1) / TOTAL_TRIALS) * 100}%`;
+
+            // 시퀀스 생성 (1~9 중 중복 없이 무작위 추출)
+            let shuffledDigits = [...DIGITS];
+            for (let i = shuffledDigits.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffledDigits[i], shuffledDigits[j]] = [shuffledDigits[j], shuffledDigits[i]];
+            }
+            currentSequence = shuffledDigits.slice(0, currentSequenceLength);
+
+            const dotsContainer = document.getElementById('progress-dots');
+            dotsContainer.innerHTML = '';
+            for(let i=0; i < currentSequenceLength; i++){
+                dotsContainer.innerHTML += `<div class="dot"></div>`;
+            }
+
+            showScreen('screen-display');
+            const targetNumber = document.getElementById('target-number');
+            const instruction = document.getElementById('display-instruction');
+            
+            targetNumber.textContent = ''; 
+            instruction.style.opacity = '1';
+
+            // 3, 2, 1 카운트다운
+            instruction.textContent = '준비... 3';
+            await sleep(800);
+            instruction.textContent = '준비... 2';
+            await sleep(800);
+            instruction.textContent = '준비... 1';
+            await sleep(800);
+            instruction.textContent = '시작!';
+            await sleep(600);
+
+            instruction.style.opacity = '0';
+            await sleep(400);
+
+            // 숫자 제시 영역 초기화 (일자로 나타날 공간(span) 미리 생성)
+            const slots = [];
+            for (let i = 0; i < currentSequence.length; i++) {
+                const span = document.createElement('span');
+                span.className = 'digit-slot';
+                span.textContent = currentSequence[i];
+                targetNumber.appendChild(span);
+                slots.push(span);
+            }
+
+            // 순차적으로 숫자 표시
+            for (let i = 0; i < currentSequence.length; i++) {
+                // 숫자 ON
+                slots[i].classList.add('visible');
+                await sleep(TIME_DIGIT_ON);
+                
+                // 숫자 OFF (숨김)
+                slots[i].classList.remove('visible');
+                await sleep(TIME_DIGIT_OFF);
+            }
+
+            // 유지 구간
+            await sleep(TIME_MAINTENANCE);
+
+            showScreen('screen-input');
+            inputStartTime = performance.now();
+        }
+
+        function selectDigit(digit) {
+            if (userSequence.length >= currentSequenceLength) return;
+            
+            userSequence.push(digit);
+            
+            const dots = document.querySelectorAll('#progress-dots .dot');
+            if (userSequence.length <= dots.length) {
+                dots[userSequence.length - 1].classList.add('filled');
+            }
+
+            if (userSequence.length === currentSequenceLength) {
+                evaluateTimer = setTimeout(evaluateTrial, 300);
+            }
+        }
+
+        function undoDigit() {
+            if (userSequence.length === 0) return;
+            
+            if (evaluateTimer) {
+                clearTimeout(evaluateTimer);
+                evaluateTimer = null;
+            }
+
+            userSequence.pop();
+            
+            const dots = document.querySelectorAll('#progress-dots .dot');
+            dots[userSequence.length].classList.remove('filled');
+        }
+
+        async function evaluateTrial() {
+            const responseTimeMs = Math.round(performance.now() - inputStartTime);
+            
+            const exact_correct = JSON.stringify(currentSequence) === JSON.stringify(userSequence);
+            
+            let position_correct = 0;
+            for (let i = 0; i < currentSequenceLength; i++) {
+                if (currentSequence[i] === userSequence[i]) position_correct++;
+            }
+
+            // 데이터 저장
+            trialResults.push({
+                participant_name: participantName,
+                trial_index: currentTrial,
+                sequence_length: currentSequenceLength,
+                target_sequence: currentSequence.join('-'),
+                response: userSequence.join('-'),
+                exact_correct: exact_correct,
+                position_correct: position_correct,
+                response_time_ms: responseTimeMs
+            });
+
+            // 피드백 제공
+            showScreen('screen-feedback');
+            const feedbackMsg = document.getElementById('feedback-message');
+            
+            if (exact_correct) {
+                feedbackMsg.textContent = '정답!';
+                feedbackMsg.className = 'feedback-text correct';
+            } else {
+                feedbackMsg.textContent = '오답';
+                feedbackMsg.className = 'feedback-text incorrect';
+            }
+            
+            feedbackMsg.style.opacity = '1';
+            await sleep(1000); 
+            feedbackMsg.style.opacity = '0';
+            await sleep(300);
+
+            runNextTrial();
+        }
+
+        function showFinalResults() {
+            showScreen('screen-result');
+            document.getElementById('result-greeting').innerHTML = `<b>${participantName}</b>님, 수고하셨습니다!`;
+            
+            let exactCount = 0;
+            let posSum = 0;
+            let itemTotal = 0;
+            let rtSum = 0;
+
+            const accByLen = { 3: {c:0, t:0}, 4: {c:0, t:0}, 5: {c:0, t:0}, 6: {c:0, t:0} };
+
+            trialResults.forEach(res => {
+                if(res.exact_correct) {
+                    exactCount++;
+                    accByLen[res.sequence_length].c++;
+                }
+                accByLen[res.sequence_length].t++;
+                
+                posSum += res.position_correct;
+                itemTotal += res.sequence_length;
+                rtSum += res.response_time_ms;
+            });
+
+            const avgPosAcc = itemTotal > 0 ? ((posSum / itemTotal) * 100).toFixed(1) : 0;
+            const avgRt = Math.round(rtSum / TOTAL_TRIALS);
+
+            document.getElementById('score-total').textContent = `${exactCount} / ${TOTAL_TRIALS}`;
+            document.getElementById('score-pos').textContent = `${avgPosAcc}%`;
+            document.getElementById('score-rt').textContent = `${avgRt}ms`;
+
+            // Chart.js 그래프 그리기
+            const labels = [3, 4, 5, 6];
+            const dataPts = labels.map(l => {
+                const stat = accByLen[l];
+                return stat.t > 0 ? (stat.c / stat.t) * 100 : 0;
+            });
+
+            const ctx = document.getElementById('accuracyChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['길이 3', '길이 4', '길이 5', '길이 6'],
+                    datasets: [{
+                        label: '완벽 정답률 (%)',
+                        data: dataPts,
+                        backgroundColor: 'rgba(14, 165, 233, 0.6)',
+                        borderColor: 'rgba(14, 165, 233, 1)',
+                        borderWidth: 1,
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            title: { display: true, text: '정확도 (%)' }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        title: { 
+                            display: true, 
+                            text: '시퀀스 길이별 정확도 (Exact Correct)',
+                            font: { size: 16 }
+                        }
+                    }
+                }
+            });
+
+            // 완료 후 구글 시트로 자동 전송
+            sendDataToGoogleSheets();
+        }
+
+        function sendDataToGoogleSheets() {
+            const statusDiv = document.getElementById('save-status');
+            
+            if (!GOOGLE_APP_SCRIPT_URL || GOOGLE_APP_SCRIPT_URL === '여기에_웹앱_URL을_붙여넣으세요') {
+                statusDiv.textContent = "※ 구글 시트 자동 저장이 설정되지 않았습니다 (웹앱 URL 필요). CSV로 다운로드해주세요.";
+                return;
+            }
+
+            statusDiv.textContent = "구글 스프레드시트에 결과를 저장하고 있습니다...";
+            statusDiv.style.color = "var(--text-muted)";
+
+            const formData = new FormData();
+            formData.append('data', JSON.stringify(trialResults));
+
+            fetch(GOOGLE_APP_SCRIPT_URL, {
+                method: 'POST',
+                body: formData,
+                mode: 'no-cors'
+            })
+            .then(() => {
+                // mode: 'no-cors'이므로 응답 내용을 정확히 볼 수는 없지만 요청은 성공적으로 전송됨
+                statusDiv.textContent = "✅ 구글 스프레드시트에 결과가 성공적으로 저장되었습니다!";
+                statusDiv.style.color = "var(--color-green)";
+            })
+            .catch(error => {
+                console.error("구글 시트 전송 실패:", error);
+                statusDiv.textContent = "❌ 구글 시트 저장에 실패했습니다. 데이터를 보존하려면 CSV를 다운로드하세요.";
+                statusDiv.style.color = "var(--color-red)";
+            });
+        }
+
+        function downloadCSV() {
+            const headers = [
+                'participant_name', 'trial_index', 'sequence_length', 
+                'target_sequence', 'response', 'exact_correct', 
+                'position_correct', 'response_time_ms'
+            ];
+            
+            let csvContent = "data:text/csv;charset=utf-8,\uFEFF" + headers.join(',') + "\n";
+            
+            trialResults.forEach(res => {
+                const row = [
+                    res.participant_name,
+                    res.trial_index,
+                    res.sequence_length,
+                    res.target_sequence,
+                    res.response,
+                    res.exact_correct,
+                    res.position_correct,
+                    res.response_time_ms
+                ];
+                csvContent += row.join(',') + "\n";
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `DigitSpanTask_${participantName}_결과.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        document.getElementById('participant-name').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') startTask();
+        });
+
+        // 키보드 숫자 입력 지원
+        document.addEventListener('keydown', function(e) {
+            // 입력 화면이 활성화 되어 있을 때만 키보드 입력 허용
+            if (document.getElementById('screen-input').classList.contains('active')) {
+                if (e.key === 'Backspace') {
+                    undoDigit();
+                    return;
+                }
+                const key = parseInt(e.key);
+                if (key >= 1 && key <= 9) {
+                    selectDigit(key);
+                    
+                    // 시각적 피드백 (버튼 눌림 효과)
+                    const btns = document.querySelectorAll('.number-btn');
+                    btns.forEach(btn => {
+                        if (parseInt(btn.textContent) === key) {
+                            btn.style.transform = 'translateY(0)';
+                            btn.style.borderColor = 'var(--accent-color)';
+                            btn.style.color = 'var(--accent-color)';
+                            setTimeout(() => {
+                                btn.style.transform = '';
+                                btn.style.borderColor = '';
+                                btn.style.color = '';
+                            }, 150);
+                        }
+                    });
+                }
+            }
+        });
+    </script>
+</body>
+</html>
