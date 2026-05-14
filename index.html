@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -537,6 +538,7 @@
     }
   </style>
 </head>
+
 <body>
   <main class="app">
     <section id="startScreen" class="screen active">
@@ -622,7 +624,8 @@
             </div>
             <div id="responseBox" class="response-box" hidden>
               <label for="responseInput">응답</label>
-              <input id="responseInput" class="response-input" type="text" inputmode="numeric" autocomplete="off" placeholder="숫자 입력">
+              <input id="responseInput" class="response-input" type="text" inputmode="numeric" autocomplete="off"
+                placeholder="숫자 입력">
               <div id="responseError" class="error"></div>
               <div class="button-row center">
                 <button id="submitBtn" class="btn" type="button">제출</button>
@@ -644,12 +647,11 @@
             <div class="mark">R</div>
             <div>
               <h1>결과 요약</h1>
-              <p id="resultSubtitle" class="subtitle">CSV를 다운로드해서 보고서 분석에 사용하세요.</p>
+              <p id="resultSubtitle" class="subtitle">결과는 Google 스프레드시트에 자동 저장됩니다.</p>
             </div>
           </div>
           <div class="button-row">
-            <button id="saveSheetBtn" class="btn secondary" type="button">Sheets 저장</button>
-            <button id="downloadBtn" class="btn" type="button">CSV 다운로드</button>
+            <button id="saveSheetBtn" class="btn secondary" type="button">Sheets 다시 저장</button>
             <button id="restartBtn" class="btn ghost" type="button">다시 실행</button>
           </div>
         </div>
@@ -994,48 +996,64 @@
       updateSheetStatus();
     }
 
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw7BGWYCh_EzweuUTHBmvitzRYr2CG9jjJCJBwmywFr-pcmsipcCxsPfelftvkTlhO6/exec";
+
     function updateSheetStatus(message) {
-      const canUseAppsScript = Boolean(window.google && google.script && google.script.run);
-      $("saveSheetBtn").disabled = state.savingToSheet || state.savedToSheet || !canUseAppsScript;
+      $("saveSheetBtn").disabled = state.savingToSheet || state.savedToSheet || !WEB_APP_URL;
 
       if (message) {
         $("sheetStatus").textContent = message;
         return;
       }
 
-      if (!canUseAppsScript) {
-        $("sheetStatus").textContent = "Google Apps Script로 배포하면 결과가 스프레드시트에 자동 저장됩니다. 로컬 실행 중에는 CSV 다운로드를 사용하세요.";
+      if (!WEB_APP_URL) {
+        $("sheetStatus").textContent = "저장 주소가 설정되지 않았습니다.";
       } else if (state.savedToSheet) {
-        $("sheetStatus").textContent = "Google Sheets 저장 완료.";
+        $("sheetStatus").textContent = "Google 스프레드시트 저장 요청 완료.";
       } else {
-        $("sheetStatus").textContent = "결과 화면이 열리면 Google Sheets 저장을 자동으로 시도합니다.";
+        $("sheetStatus").textContent = "결과 화면이 열리면 Google 스프레드시트 저장을 자동으로 시도합니다.";
       }
     }
 
     function saveToGoogleSheet() {
-      const canUseAppsScript = Boolean(window.google && google.script && google.script.run);
-      if (!canUseAppsScript || state.savedToSheet || state.savingToSheet || !state.results.length) {
+      if (!WEB_APP_URL || state.savedToSheet || state.savingToSheet || !state.results.length) {
         updateSheetStatus();
         return;
       }
 
       state.savingToSheet = true;
-      updateSheetStatus("Google Sheets에 저장하는 중입니다...");
+      updateSheetStatus("Google 스프레드시트에 저장 요청을 보내는 중입니다...");
+      submitResultsByFormPost();
+    }
 
-      google.script.run
-        .withSuccessHandler((result) => {
-          state.savingToSheet = false;
-          state.savedToSheet = true;
-          const savedRows = result && result.savedRows ? result.savedRows : state.results.length;
-          updateSheetStatus(`Google Sheets 저장 완료: ${savedRows}개 trial`);
-        })
-        .withFailureHandler((error) => {
-          state.savingToSheet = false;
-          state.savedToSheet = false;
-          const message = error && error.message ? error.message : "알 수 없는 오류";
-          updateSheetStatus(`저장 실패: ${message}. Sheets 저장 버튼으로 다시 시도하세요.`);
-        })
-        .saveResults(state.results);
+    function submitResultsByFormPost() {
+      const iframeName = "sheetSaveTarget";
+      let iframe = document.querySelector(`iframe[name="${iframeName}"]`);
+      if (!iframe) {
+        iframe = document.createElement("iframe");
+        iframe.name = iframeName;
+        iframe.style.display = "none";
+        document.body.appendChild(iframe);
+      }
+
+      const form = document.createElement("form");
+      form.method = "POST";
+      form.action = WEB_APP_URL;
+      form.target = iframeName;
+      form.style.display = "none";
+
+      const input = document.createElement("textarea");
+      input.name = "data";
+      input.value = JSON.stringify(state.results);
+      form.appendChild(input);
+
+      document.body.appendChild(form);
+      form.submit();
+      form.remove();
+
+      state.savingToSheet = false;
+      state.savedToSheet = true;
+      updateSheetStatus(`Google 스프레드시트 저장 요청 완료: ${state.results.length}개 trial`);
     }
 
     function csvEscape(value) {
@@ -1094,7 +1112,6 @@
     $("submitBtn").addEventListener("click", submitResponse);
     $("nextBtn").addEventListener("click", nextTrial);
     $("saveSheetBtn").addEventListener("click", saveToGoogleSheet);
-    $("downloadBtn").addEventListener("click", downloadCsv);
     $("restartBtn").addEventListener("click", restart);
     $("participantId").addEventListener("keydown", (event) => {
       if (event.key === "Enter") startExperiment();
@@ -1103,13 +1120,21 @@
       event.target.value = sanitizeResponse(event.target.value);
     });
     $("responseInput").addEventListener("keydown", (event) => {
-      if (event.key === "Enter") submitResponse();
+      if (event.key === "Enter") {
+        event.preventDefault();
+        event.stopPropagation();
+        submitResponse();
+      }
     });
     document.addEventListener("keydown", (event) => {
       const taskIsActive = $("taskScreen").classList.contains("active");
       const canAdvance = taskIsActive && !$("nextBox").hidden;
-      if (event.key === "Enter" && canAdvance) nextTrial();
+      if (event.key === "Enter" && canAdvance) {
+        event.preventDefault();
+        nextTrial();
+      }
     });
   </script>
 </body>
+
 </html>

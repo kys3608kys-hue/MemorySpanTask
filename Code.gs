@@ -1,10 +1,3 @@
-function doGet() {
-  return HtmlService
-    .createHtmlOutputFromFile('index')
-    .setTitle('Memory Span Task v1')
-    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
-}
-
 const SPREADSHEET_ID = '1wIIf4j7hSmi1C_9XAJH3ZWFbM2D4gm2AAPb4sLaDYXE';
 const SHEET_NAME = 'memory_span_results';
 const HEADERS = [
@@ -22,6 +15,24 @@ const HEADERS = [
   'error_type'
 ];
 
+function doPost(e) {
+  try {
+    const rawData = e.parameter && e.parameter.data
+      ? e.parameter.data
+      : e.postData.contents;
+    const rows = JSON.parse(rawData);
+    const result = saveResults(rows);
+
+    return ContentService
+      .createTextOutput(JSON.stringify(result))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (error) {
+    return ContentService
+      .createTextOutput(JSON.stringify({ ok: false, error: error.toString() }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
 function saveResults(rows) {
   if (!Array.isArray(rows) || rows.length === 0) {
     throw new Error('No result rows to save.');
@@ -32,7 +43,7 @@ function saveResults(rows) {
 
   try {
     const spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);
-    const sheet = getOrCreateResultSheet_(spreadsheet);
+    const sheet = getOrCreateResultSheet(spreadsheet);
     const values = rows.map(function(row) {
       return HEADERS.map(function(header) {
         return row[header] === undefined || row[header] === null ? '' : row[header];
@@ -53,7 +64,7 @@ function saveResults(rows) {
   }
 }
 
-function getOrCreateResultSheet_(spreadsheet) {
+function getOrCreateResultSheet(spreadsheet) {
   let sheet = spreadsheet.getSheetByName(SHEET_NAME);
   if (!sheet) {
     sheet = spreadsheet.insertSheet(SHEET_NAME);
