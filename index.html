@@ -1,0 +1,1115 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Memory Span Task v1</title>
+  <style>
+    :root {
+      --bg: #f4f7fb;
+      --panel: #ffffff;
+      --ink: #172033;
+      --muted: #667085;
+      --line: #d9e2ef;
+      --accent: #2563eb;
+      --accent-strong: #1d4ed8;
+      --accent-soft: #dbeafe;
+      --green: #15803d;
+      --green-soft: #dcfce7;
+      --red: #b91c1c;
+      --red-soft: #fee2e2;
+      --amber: #b45309;
+      --amber-soft: #fef3c7;
+      --teal: #0f766e;
+      --teal-soft: #ccfbf1;
+      --shadow: 0 20px 55px rgba(23, 32, 51, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      min-height: 100dvh;
+      background:
+        linear-gradient(90deg, rgba(37, 99, 235, 0.06) 1px, transparent 1px),
+        linear-gradient(rgba(15, 118, 110, 0.06) 1px, transparent 1px),
+        var(--bg);
+      background-size: 34px 34px;
+      color: var(--ink);
+      font-family: Arial, "Noto Sans KR", sans-serif;
+      letter-spacing: 0;
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    .app {
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+
+    .screen {
+      display: none;
+      width: min(960px, 100%);
+    }
+
+    .screen.active {
+      display: block;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .panel-inner {
+      padding: 32px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 18px 24px;
+      border-bottom: 1px solid var(--line);
+      background: #fbfdff;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .mark {
+      width: 38px;
+      height: 38px;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      background: var(--accent-soft);
+      color: var(--accent-strong);
+      font-weight: 800;
+      flex: 0 0 auto;
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin: 0;
+    }
+
+    h1 {
+      font-size: 28px;
+      line-height: 1.2;
+    }
+
+    h2 {
+      font-size: 22px;
+      line-height: 1.3;
+    }
+
+    h3 {
+      font-size: 16px;
+      line-height: 1.35;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      margin-top: 6px;
+      line-height: 1.55;
+    }
+
+    .meta {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .pill {
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 999px;
+      padding: 7px 11px;
+      color: var(--muted);
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    .info-list {
+      display: grid;
+      gap: 12px;
+      margin-top: 22px;
+    }
+
+    .info-row {
+      display: grid;
+      grid-template-columns: 36px 1fr;
+      gap: 12px;
+      align-items: start;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfdff;
+    }
+
+    .info-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      background: var(--teal-soft);
+      color: var(--teal);
+      font-weight: 800;
+    }
+
+    .info-row p {
+      color: var(--muted);
+      margin-top: 4px;
+      line-height: 1.5;
+      font-size: 14px;
+    }
+
+    .start-box {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 20px;
+      background: #fff;
+    }
+
+    label {
+      display: block;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px 15px;
+      background: #fff;
+      color: var(--ink);
+      outline: none;
+    }
+
+    input[type="text"]:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.14);
+    }
+
+    .button-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 18px;
+    }
+
+    .button-row.center {
+      justify-content: center;
+    }
+
+    .btn {
+      min-height: 46px;
+      border: 0;
+      border-radius: 8px;
+      padding: 0 18px;
+      background: var(--accent);
+      color: #fff;
+      font-weight: 800;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: transform 150ms ease, background 150ms ease;
+      text-decoration: none;
+    }
+
+    .btn:hover {
+      background: var(--accent-strong);
+      transform: translateY(-1px);
+    }
+
+    .btn.secondary {
+      background: #eef4ff;
+      color: var(--accent-strong);
+      border: 1px solid #bfd3ff;
+    }
+
+    .btn.secondary:hover {
+      background: #dfeaff;
+    }
+
+    .btn.ghost {
+      background: #fff;
+      color: var(--ink);
+      border: 1px solid var(--line);
+    }
+
+    .btn:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .error {
+      color: var(--red);
+      font-weight: 700;
+      min-height: 20px;
+      margin-top: 10px;
+      font-size: 14px;
+    }
+
+    .progress-wrap {
+      width: 100%;
+      height: 8px;
+      background: #e8eef7;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, var(--teal), var(--accent));
+      transition: width 250ms ease;
+    }
+
+    .task-layout {
+      display: grid;
+      gap: 22px;
+      place-items: center;
+      min-height: 420px;
+      text-align: center;
+    }
+
+    .trial-status {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .stimulus-stage {
+      width: min(520px, 100%);
+      aspect-ratio: 16 / 9;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background:
+        linear-gradient(135deg, rgba(37, 99, 235, 0.07), rgba(15, 118, 110, 0.07)),
+        #fff;
+      display: grid;
+      place-items: center;
+    }
+
+    .digit {
+      font-size: clamp(82px, 16vw, 132px);
+      line-height: 1;
+      font-weight: 900;
+      color: var(--ink);
+      min-width: 1ch;
+    }
+
+    .cue {
+      font-size: 28px;
+      font-weight: 900;
+      color: var(--accent-strong);
+    }
+
+    .response-box {
+      width: min(440px, 100%);
+    }
+
+    .response-input {
+      text-align: center;
+      font-size: 30px;
+      font-weight: 900;
+      letter-spacing: 0;
+    }
+
+    .trial-feedback {
+      min-height: 34px;
+      font-weight: 800;
+      margin-top: 12px;
+    }
+
+    .trial-feedback.good {
+      color: var(--green);
+    }
+
+    .trial-feedback.bad {
+      color: var(--red);
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .metric {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 16px;
+      background: #fbfdff;
+    }
+
+    .metric-value {
+      font-size: 28px;
+      font-weight: 900;
+      margin-top: 8px;
+    }
+
+    .metric-label {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .results-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+
+    .result-block {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 18px;
+      background: #fff;
+    }
+
+    .bar-list {
+      display: grid;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .bar-row {
+      display: grid;
+      grid-template-columns: 70px 1fr 52px;
+      gap: 10px;
+      align-items: center;
+      font-size: 14px;
+    }
+
+    .bar-track {
+      height: 12px;
+      background: #e8eef7;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      width: 0%;
+      height: 100%;
+      background: var(--accent);
+      border-radius: inherit;
+    }
+
+    .bar-fill.green {
+      background: var(--green);
+    }
+
+    .bar-fill.amber {
+      background: var(--amber);
+    }
+
+    .mini-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+      font-size: 14px;
+    }
+
+    .mini-table th,
+    .mini-table td {
+      border-bottom: 1px solid var(--line);
+      padding: 9px 6px;
+      text-align: left;
+    }
+
+    .mini-table th {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      min-height: 26px;
+      border-radius: 999px;
+      padding: 0 9px;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .tag.good {
+      color: var(--green);
+      background: var(--green-soft);
+    }
+
+    .tag.bad {
+      color: var(--red);
+      background: var(--red-soft);
+    }
+
+    .tag.warn {
+      color: var(--amber);
+      background: var(--amber-soft);
+    }
+
+    @media (max-width: 760px) {
+      .app {
+        padding: 14px;
+        align-items: stretch;
+      }
+
+      .panel-inner {
+        padding: 22px;
+      }
+
+      .topbar,
+      .grid,
+      .results-layout,
+      .summary-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .topbar {
+        display: grid;
+      }
+
+      .meta {
+        justify-content: flex-start;
+      }
+
+      h1 {
+        font-size: 24px;
+      }
+
+      .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .bar-row {
+        grid-template-columns: 58px 1fr 46px;
+      }
+    }
+
+    @media (max-width: 440px) {
+      .panel-inner {
+        padding: 18px;
+      }
+
+      .summary-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .btn {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section id="startScreen" class="screen active">
+      <div class="panel">
+        <div class="topbar">
+          <div class="brand">
+            <div class="mark">M</div>
+            <div>
+              <h1>Memory Span Task v1</h1>
+              <p class="subtitle">숫자를 순서대로 기억한 뒤 입력하는 기억폭 실험</p>
+            </div>
+          </div>
+          <div class="meta">
+            <span class="pill">총 12 trial</span>
+            <span class="pill">3-6자리</span>
+            <span class="pill">CSV 저장</span>
+          </div>
+        </div>
+        <div class="panel-inner">
+          <div class="grid">
+            <div>
+              <h2>실험 절차</h2>
+              <div class="info-list">
+                <div class="info-row">
+                  <div class="info-icon">1</div>
+                  <div>
+                    <h3>자극 제시</h3>
+                    <p>한 trial마다 숫자가 하나씩 700ms 동안 제시되고, 숫자 사이에는 300ms 공백이 있습니다.</p>
+                  </div>
+                </div>
+                <div class="info-row">
+                  <div class="info-icon">2</div>
+                  <div>
+                    <h3>응답 입력</h3>
+                    <p>숫자가 사라진 뒤 기억나는 순서 그대로 입력합니다. 정답 피드백은 trial마다 표시됩니다.</p>
+                  </div>
+                </div>
+                <div class="info-row">
+                  <div class="info-icon">3</div>
+                  <div>
+                    <h3>결과 확인</h3>
+                    <p>전체 정확도, 길이별 정확도, 위치별 정확도, 추정 span과 trial별 CSV를 확인합니다.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="start-box">
+              <label for="participantId">참가자 ID</label>
+              <input id="participantId" type="text" placeholder="예: P001" autocomplete="off">
+              <p class="subtitle">ID는 CSV의 `participant_id` 컬럼에 저장됩니다.</p>
+              <div id="startError" class="error"></div>
+              <div class="button-row">
+                <button id="startBtn" class="btn" type="button">시작</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="taskScreen" class="screen">
+      <div class="panel">
+        <div class="progress-wrap" aria-hidden="true">
+          <div id="progressBar" class="progress-bar"></div>
+        </div>
+        <div class="topbar">
+          <div class="brand">
+            <div class="mark">T</div>
+            <div>
+              <h2 id="taskTitle">준비</h2>
+              <p id="taskSubtitle" class="subtitle">화면 중앙의 숫자를 순서대로 기억하세요.</p>
+            </div>
+          </div>
+          <div class="trial-status">
+            <span id="trialCounter" class="pill">Trial 1 / 12</span>
+            <span id="lengthBadge" class="pill">3자리</span>
+          </div>
+        </div>
+        <div class="panel-inner">
+          <div class="task-layout">
+            <div id="stimulusStage" class="stimulus-stage">
+              <div id="stimulusText" class="cue">준비</div>
+            </div>
+            <div id="responseBox" class="response-box" hidden>
+              <label for="responseInput">응답</label>
+              <input id="responseInput" class="response-input" type="text" inputmode="numeric" autocomplete="off" placeholder="숫자 입력">
+              <div id="responseError" class="error"></div>
+              <div class="button-row center">
+                <button id="submitBtn" class="btn" type="button">제출</button>
+              </div>
+            </div>
+            <div id="trialFeedback" class="trial-feedback"></div>
+            <div id="nextBox" class="button-row center" hidden>
+              <button id="nextBtn" class="btn" type="button">다음 trial</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="resultScreen" class="screen">
+      <div class="panel">
+        <div class="topbar">
+          <div class="brand">
+            <div class="mark">R</div>
+            <div>
+              <h1>결과 요약</h1>
+              <p id="resultSubtitle" class="subtitle">CSV를 다운로드해서 보고서 분석에 사용하세요.</p>
+            </div>
+          </div>
+          <div class="button-row">
+            <button id="saveSheetBtn" class="btn secondary" type="button">Sheets 저장</button>
+            <button id="downloadBtn" class="btn" type="button">CSV 다운로드</button>
+            <button id="restartBtn" class="btn ghost" type="button">다시 실행</button>
+          </div>
+        </div>
+        <div class="panel-inner">
+          <div id="sheetStatus" class="subtitle"></div>
+          <div class="summary-grid">
+            <div class="metric">
+              <div class="metric-label">전체 정확도</div>
+              <div id="overallAccuracy" class="metric-value">0%</div>
+            </div>
+            <div class="metric">
+              <div class="metric-label">정답 trial</div>
+              <div id="correctTrials" class="metric-value">0/12</div>
+            </div>
+            <div class="metric">
+              <div class="metric-label">추정 span</div>
+              <div id="estimatedSpan" class="metric-value">0</div>
+            </div>
+            <div class="metric">
+              <div class="metric-label">평균 반응시간</div>
+              <div id="meanRt" class="metric-value">0ms</div>
+            </div>
+          </div>
+
+          <div class="results-layout">
+            <div class="result-block">
+              <h3>길이별 정확도</h3>
+              <div id="lengthBars" class="bar-list"></div>
+            </div>
+            <div class="result-block">
+              <h3>위치별 정확도</h3>
+              <div id="positionBars" class="bar-list"></div>
+            </div>
+            <div class="result-block">
+              <h3>진행 구간 비교</h3>
+              <div id="phaseBars" class="bar-list"></div>
+            </div>
+            <div class="result-block">
+              <h3>최근 trial</h3>
+              <table class="mini-table">
+                <thead>
+                  <tr>
+                    <th>Trial</th>
+                    <th>정답</th>
+                    <th>응답</th>
+                    <th>판정</th>
+                  </tr>
+                </thead>
+                <tbody id="trialTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const TOTAL_TRIALS = 12;
+    const DIGIT_MS = 700;
+    const GAP_MS = 300;
+    const RETENTION_MS = 700;
+    const LENGTHS = [3, 4, 5, 6];
+    const TRIALS_PER_LENGTH = 3;
+
+    const state = {
+      participantId: "",
+      trials: [],
+      currentIndex: 0,
+      responseStartedAt: 0,
+      results: [],
+      savedToSheet: false,
+      savingToSheet: false
+    };
+
+    const $ = (id) => document.getElementById(id);
+    const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+    function shuffle(items) {
+      const copy = [...items];
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
+    }
+
+    function generateSequence(length) {
+      return shuffle([1, 2, 3, 4, 5, 6, 7, 8, 9]).slice(0, length);
+    }
+
+    function buildTrials() {
+      const lengths = [];
+      LENGTHS.forEach((length) => {
+        for (let i = 0; i < TRIALS_PER_LENGTH; i++) lengths.push(length);
+      });
+
+      return shuffle(lengths).map((length, index) => ({
+        trial_index: index + 1,
+        sequence_length: length,
+        target_sequence: generateSequence(length).join("")
+      }));
+    }
+
+    function showScreen(screenId) {
+      ["startScreen", "taskScreen", "resultScreen"].forEach((id) => {
+        $(id).classList.toggle("active", id === screenId);
+      });
+    }
+
+    function setProgress() {
+      const progress = (state.currentIndex / TOTAL_TRIALS) * 100;
+      $("progressBar").style.width = `${progress}%`;
+    }
+
+    function startExperiment() {
+      const participantId = $("participantId").value.trim();
+      if (!participantId) {
+        $("startError").textContent = "참가자 ID를 입력하세요.";
+        $("participantId").focus();
+        return;
+      }
+
+      state.participantId = participantId;
+      state.trials = buildTrials();
+      state.currentIndex = 0;
+      state.results = [];
+      $("startError").textContent = "";
+      showScreen("taskScreen");
+      runCurrentTrial();
+    }
+
+    async function runCurrentTrial() {
+      const trial = state.trials[state.currentIndex];
+      $("responseBox").hidden = true;
+      $("nextBox").hidden = true;
+      $("trialFeedback").textContent = "";
+      $("trialFeedback").className = "trial-feedback";
+      $("responseError").textContent = "";
+      $("responseInput").value = "";
+      $("taskTitle").textContent = "자극 제시";
+      $("taskSubtitle").textContent = "숫자가 하나씩 제시됩니다.";
+      $("trialCounter").textContent = `Trial ${trial.trial_index} / ${TOTAL_TRIALS}`;
+      $("lengthBadge").textContent = `${trial.sequence_length}자리`;
+      setProgress();
+
+      $("stimulusText").className = "cue";
+      $("stimulusText").textContent = "준비";
+      await sleep(650);
+
+      const digits = trial.target_sequence.split("");
+      for (let i = 0; i < digits.length; i++) {
+        $("stimulusText").className = "digit";
+        $("stimulusText").textContent = digits[i];
+        await sleep(DIGIT_MS);
+
+        $("stimulusText").textContent = "";
+        if (i < digits.length - 1) await sleep(GAP_MS);
+      }
+
+      $("taskTitle").textContent = "유지 구간";
+      $("taskSubtitle").textContent = "방금 본 숫자 순서를 잠깐 유지하세요.";
+      $("stimulusText").className = "cue";
+      $("stimulusText").textContent = "기억";
+      await sleep(RETENTION_MS);
+
+      $("taskTitle").textContent = "응답 입력";
+      $("taskSubtitle").textContent = "기억나는 숫자를 순서대로 입력하세요.";
+      $("stimulusText").className = "cue";
+      $("stimulusText").textContent = "?";
+      $("responseBox").hidden = false;
+      state.responseStartedAt = performance.now();
+      $("responseInput").focus();
+    }
+
+    function sanitizeResponse(value) {
+      return value.replace(/[^0-9]/g, "");
+    }
+
+    function classifyError(target, response, previousSequence) {
+      if (target === response) return "correct";
+      if (response.length < target.length) return "omission_or_short_response";
+      if (response.length > target.length) return "extra_or_long_response";
+
+      const targetDigits = target.split("");
+      const responseDigits = response.split("");
+      const sameDigitsDifferentOrder =
+        [...targetDigits].sort().join("") === [...responseDigits].sort().join("");
+
+      const intrusionDigits = previousSequence
+        ? responseDigits.filter((digit) => previousSequence.includes(digit) && !target.includes(digit))
+        : [];
+
+      if (intrusionDigits.length > 0) return `possible_intrusion:${[...new Set(intrusionDigits)].join("")}`;
+      if (sameDigitsDifferentOrder) return "order_error";
+      return "substitution_error";
+    }
+
+    function submitResponse() {
+      const trial = state.trials[state.currentIndex];
+      const response = sanitizeResponse($("responseInput").value);
+      $("responseInput").value = response;
+
+      if (!response) {
+        $("responseError").textContent = "응답을 입력하세요.";
+        $("responseInput").focus();
+        return;
+      }
+
+      const target = trial.target_sequence;
+      const positionVector = target.split("").map((digit, index) => response[index] === digit ? 1 : 0);
+      const exactCorrect = response === target;
+      const previousSequence = state.currentIndex > 0
+        ? state.trials[state.currentIndex - 1].target_sequence
+        : "";
+
+      const result = {
+        participant_id: state.participantId,
+        trial_index: trial.trial_index,
+        sequence_length: trial.sequence_length,
+        target_sequence: target,
+        response,
+        exact_correct: exactCorrect ? 1 : 0,
+        position_correct: positionVector.join("|"),
+        position_correct_count: positionVector.reduce((sum, value) => sum + value, 0),
+        response_time_ms: Math.round(performance.now() - state.responseStartedAt),
+        timestamp: new Date().toISOString(),
+        previous_sequence: previousSequence,
+        error_type: classifyError(target, response, previousSequence)
+      };
+
+      state.results.push(result);
+      $("responseBox").hidden = true;
+      $("nextBox").hidden = false;
+      $("trialFeedback").className = exactCorrect ? "trial-feedback good" : "trial-feedback bad";
+      $("trialFeedback").textContent = exactCorrect
+        ? "정답입니다."
+        : `오답입니다. 정답: ${target}`;
+      $("taskTitle").textContent = exactCorrect ? "정답" : "오답";
+      $("taskSubtitle").textContent = "결과가 저장되었습니다.";
+      $("stimulusText").className = "cue";
+      $("stimulusText").textContent = exactCorrect ? "O" : "X";
+
+      if (state.currentIndex === TOTAL_TRIALS - 1) {
+        $("nextBtn").textContent = "결과 보기";
+      } else {
+        $("nextBtn").textContent = "다음 trial";
+      }
+      $("nextBtn").focus();
+    }
+
+    function nextTrial() {
+      if (state.currentIndex >= TOTAL_TRIALS - 1) {
+        state.currentIndex = TOTAL_TRIALS;
+        setProgress();
+        renderResults();
+        showScreen("resultScreen");
+        saveToGoogleSheet();
+        return;
+      }
+
+      state.currentIndex += 1;
+      runCurrentTrial();
+    }
+
+    function percent(value, total) {
+      if (!total) return 0;
+      return Math.round((value / total) * 100);
+    }
+
+    function mean(values) {
+      if (!values.length) return 0;
+      return values.reduce((sum, value) => sum + value, 0) / values.length;
+    }
+
+    function createBar(label, value, className = "") {
+      const row = document.createElement("div");
+      row.className = "bar-row";
+      row.innerHTML = `
+        <strong>${label}</strong>
+        <div class="bar-track"><div class="bar-fill ${className}" style="width: ${value}%"></div></div>
+        <span>${value}%</span>
+      `;
+      return row;
+    }
+
+    function renderResults() {
+      const results = state.results;
+      const correctCount = results.filter((row) => row.exact_correct === 1).length;
+      const overall = percent(correctCount, results.length);
+      const meanResponseTime = Math.round(mean(results.map((row) => row.response_time_ms)));
+
+      $("resultSubtitle").textContent = `${state.participantId} 참가자의 ${results.length}개 trial 결과입니다.`;
+      $("overallAccuracy").textContent = `${overall}%`;
+      $("correctTrials").textContent = `${correctCount}/${results.length}`;
+      $("meanRt").textContent = `${meanResponseTime}ms`;
+
+      const lengthAccuracies = LENGTHS.map((length) => {
+        const rows = results.filter((row) => row.sequence_length === length);
+        return {
+          length,
+          accuracy: percent(rows.filter((row) => row.exact_correct === 1).length, rows.length)
+        };
+      });
+      const estimatedSpan = lengthAccuracies
+        .filter((row) => row.accuracy >= 67)
+        .reduce((max, row) => Math.max(max, row.length), 0);
+      $("estimatedSpan").textContent = estimatedSpan || "미달";
+
+      $("lengthBars").innerHTML = "";
+      lengthAccuracies.forEach((row) => {
+        $("lengthBars").appendChild(createBar(`${row.length}자리`, row.accuracy, "green"));
+      });
+
+      $("positionBars").innerHTML = "";
+      for (let position = 0; position < 6; position++) {
+        const available = results.filter((row) => row.sequence_length > position);
+        const correct = available.filter((row) => row.position_correct.split("|")[position] === "1").length;
+        $("positionBars").appendChild(createBar(`${position + 1}번째`, percent(correct, available.length)));
+      }
+
+      const firstHalf = results.filter((row) => row.trial_index <= 6);
+      const secondHalf = results.filter((row) => row.trial_index > 6);
+      $("phaseBars").innerHTML = "";
+      $("phaseBars").appendChild(createBar("1-6", percent(firstHalf.filter((row) => row.exact_correct).length, firstHalf.length), "amber"));
+      $("phaseBars").appendChild(createBar("7-12", percent(secondHalf.filter((row) => row.exact_correct).length, secondHalf.length), "amber"));
+
+      $("trialTableBody").innerHTML = "";
+      results.slice(-6).forEach((row) => {
+        const tr = document.createElement("tr");
+        const tagClass = row.exact_correct ? "good" : row.error_type.startsWith("possible_intrusion") ? "warn" : "bad";
+        const tagText = row.exact_correct ? "정답" : row.error_type.startsWith("possible_intrusion") ? "침입 가능" : "오답";
+        tr.innerHTML = `
+          <td>${row.trial_index}</td>
+          <td>${row.target_sequence}</td>
+          <td>${row.response}</td>
+          <td><span class="tag ${tagClass}">${tagText}</span></td>
+        `;
+        $("trialTableBody").appendChild(tr);
+      });
+
+      updateSheetStatus();
+    }
+
+    function updateSheetStatus(message) {
+      const canUseAppsScript = Boolean(window.google && google.script && google.script.run);
+      $("saveSheetBtn").disabled = state.savingToSheet || state.savedToSheet || !canUseAppsScript;
+
+      if (message) {
+        $("sheetStatus").textContent = message;
+        return;
+      }
+
+      if (!canUseAppsScript) {
+        $("sheetStatus").textContent = "Google Apps Script로 배포하면 결과가 스프레드시트에 자동 저장됩니다. 로컬 실행 중에는 CSV 다운로드를 사용하세요.";
+      } else if (state.savedToSheet) {
+        $("sheetStatus").textContent = "Google Sheets 저장 완료.";
+      } else {
+        $("sheetStatus").textContent = "결과 화면이 열리면 Google Sheets 저장을 자동으로 시도합니다.";
+      }
+    }
+
+    function saveToGoogleSheet() {
+      const canUseAppsScript = Boolean(window.google && google.script && google.script.run);
+      if (!canUseAppsScript || state.savedToSheet || state.savingToSheet || !state.results.length) {
+        updateSheetStatus();
+        return;
+      }
+
+      state.savingToSheet = true;
+      updateSheetStatus("Google Sheets에 저장하는 중입니다...");
+
+      google.script.run
+        .withSuccessHandler((result) => {
+          state.savingToSheet = false;
+          state.savedToSheet = true;
+          const savedRows = result && result.savedRows ? result.savedRows : state.results.length;
+          updateSheetStatus(`Google Sheets 저장 완료: ${savedRows}개 trial`);
+        })
+        .withFailureHandler((error) => {
+          state.savingToSheet = false;
+          state.savedToSheet = false;
+          const message = error && error.message ? error.message : "알 수 없는 오류";
+          updateSheetStatus(`저장 실패: ${message}. Sheets 저장 버튼으로 다시 시도하세요.`);
+        })
+        .saveResults(state.results);
+    }
+
+    function csvEscape(value) {
+      const text = String(value ?? "");
+      if (/[",\n]/.test(text)) return `"${text.replace(/"/g, '""')}"`;
+      return text;
+    }
+
+    function downloadCsv() {
+      const columns = [
+        "participant_id",
+        "trial_index",
+        "sequence_length",
+        "target_sequence",
+        "response",
+        "exact_correct",
+        "position_correct",
+        "position_correct_count",
+        "response_time_ms",
+        "timestamp",
+        "previous_sequence",
+        "error_type"
+      ];
+
+      const lines = [
+        columns.join(","),
+        ...state.results.map((row) => columns.map((column) => csvEscape(row[column])).join(","))
+      ];
+      const blob = new Blob(["\ufeff" + lines.join("\n")], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      const safeId = state.participantId.replace(/[^a-zA-Z0-9_-]/g, "_") || "participant";
+      link.href = url;
+      link.download = `memory_span_${safeId}_${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    function restart() {
+      state.participantId = "";
+      state.trials = [];
+      state.currentIndex = 0;
+      state.results = [];
+      state.savedToSheet = false;
+      state.savingToSheet = false;
+      $("participantId").value = "";
+      $("startError").textContent = "";
+      $("nextBtn").textContent = "다음 trial";
+      showScreen("startScreen");
+      $("participantId").focus();
+    }
+
+    $("startBtn").addEventListener("click", startExperiment);
+    $("submitBtn").addEventListener("click", submitResponse);
+    $("nextBtn").addEventListener("click", nextTrial);
+    $("saveSheetBtn").addEventListener("click", saveToGoogleSheet);
+    $("downloadBtn").addEventListener("click", downloadCsv);
+    $("restartBtn").addEventListener("click", restart);
+    $("participantId").addEventListener("keydown", (event) => {
+      if (event.key === "Enter") startExperiment();
+    });
+    $("responseInput").addEventListener("input", (event) => {
+      event.target.value = sanitizeResponse(event.target.value);
+    });
+    $("responseInput").addEventListener("keydown", (event) => {
+      if (event.key === "Enter") submitResponse();
+    });
+    document.addEventListener("keydown", (event) => {
+      const taskIsActive = $("taskScreen").classList.contains("active");
+      const canAdvance = taskIsActive && !$("nextBox").hidden;
+      if (event.key === "Enter" && canAdvance) nextTrial();
+    });
+  </script>
+</body>
+</html>
