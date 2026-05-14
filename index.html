@@ -652,6 +652,7 @@
           </div>
           <div class="button-row">
             <button id="saveSheetBtn" class="btn secondary" type="button">Sheets 다시 저장</button>
+            <button id="downloadBtn" class="btn" type="button">CSV 다운로드</button>
             <button id="restartBtn" class="btn ghost" type="button">다시 실행</button>
           </div>
         </div>
@@ -1112,6 +1113,7 @@
     $("submitBtn").addEventListener("click", submitResponse);
     $("nextBtn").addEventListener("click", nextTrial);
     $("saveSheetBtn").addEventListener("click", saveToGoogleSheet);
+    $("downloadBtn").addEventListener("click", downloadCsv);
     $("restartBtn").addEventListener("click", restart);
     $("participantId").addEventListener("keydown", (event) => {
       if (event.key === "Enter") startExperiment();
